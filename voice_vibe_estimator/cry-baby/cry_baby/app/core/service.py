@@ -53,6 +53,24 @@ class CryBabyService(ports.Service):
             prediction = classifier.classify(file_path)
             self.logger.debug(f"Prediction: {prediction}")
             self.repository.save(file_path, prediction)
+            
+            # Print user-friendly crying status
+            self._print_crying_status(prediction)
+
+    def _print_crying_status(self, prediction: float):
+        """
+        Print a user-friendly message about whether the baby is crying
+        """
+        if prediction > 0.8:
+            self.logger.info(f"😭 CRYING DETECTED! (Probability: {prediction:.1%}) - Please check on your baby!")
+        elif prediction > 0.6:
+            self.logger.info(f"😢 Baby might be crying (Probability: {prediction:.1%}) - Monitor closely")
+        elif prediction > 0.4:
+            self.logger.info(f"🤔 Some crying sounds detected (Probability: {prediction:.1%})")
+        elif prediction > 0.2:
+            self.logger.info(f"😊 Baby seems calm (Probability: {prediction:.1%})")
+        else:
+            self.logger.info(f"😴 Baby is very calm (Probability: {prediction:.1%})")
 
     def stop_continuous_evaluation(self):
         self.recorder.tear_down()
