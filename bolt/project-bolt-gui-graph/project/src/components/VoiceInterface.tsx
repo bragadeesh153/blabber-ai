@@ -16,7 +16,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
   const [happinessData, setHappinessData] = useState<HappinessDataPoint[]>([])
   const [currentHappiness, setCurrentHappiness] = useState(65)
   
-  const scaleRef = useRef<HTMLDivElement>(null)
+  const scaleRef = useRef<HTMLButtonElement>(null)
   const pulseRef = useRef<HTMLDivElement>(null)
   const backgroundPulseRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
@@ -99,10 +99,14 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
       setCurrentHappiness(newValue)
       
       setHappinessData(prev => {
-        const newData = [...prev, { time, value: Math.round(newValue), timestamp: now }]
-        return newData.slice(-12)
+        // Add new data point to the end
+        const newDataPoint = { time, value: Math.round(newValue), timestamp: now }
+        const updatedData = [...prev, newDataPoint]
+        
+        // Keep only the last 12 data points (sliding window)
+        return updatedData.slice(-12)
       })
-    }, 45000)
+    }, 4000)
 
     return () => clearInterval(interval)
   }, [currentHappiness])
@@ -131,7 +135,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
   // Slower background pulse effect when not speaking
   useEffect(() => {
     const backgroundVibration = () => {
-      playTone(220, 0.1, 0.01)
+      // playTone(220, 0.1, 0.01)
       
       if (backgroundPulseRef.current) {
         backgroundPulseRef.current.style.transition = 'opacity 0.5s ease'
@@ -170,7 +174,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
       }
 
       const speakingTones = setInterval(() => {
-        playTone(Math.random() * 200 + 300, 0.1, 0.02)
+        // playTone(Math.random() * 200 + 300, 0.1, 0.02)
       }, 800)
 
       return () => clearInterval(speakingTones)
@@ -181,53 +185,108 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
     }
   }, [isSpeaking])
 
-  const handleStartSpeaking = () => {
+  // const handleStartSpeaking = () => {
+  //   if (isSpeaking) {
+  //     if (speechSynthesis) {
+  //       speechSynthesis.cancel()
+  //     }
+  //     setIsSpeaking(false)
+  //     playTone(330, 0.2, 0.05)
+  //   } else {
+  //     setIsSpeaking(true)
+      
+  //     const randomMessage = messages[Math.floor(Math.random() * messages.length)]
+  //     setCurrentMessage(randomMessage)
+      
+  //     playTone(440, 0.1, 0.1)
+  //     setTimeout(() => playTone(550, 0.08, 0.08), 100)
+  //     setTimeout(() => playTone(660, 0.06, 0.06), 200)
+
+  //     if (rippleRef.current) {
+  //       rippleRef.current.style.animation = 'ripple 1s ease-out'
+  //       setTimeout(() => {
+  //         if (rippleRef.current) rippleRef.current.style.animation = ''
+  //       }, 1000)
+  //     }
+
+  //     if (scaleRef.current) {
+  //       scaleRef.current.style.transform = 'scale(0.95)'
+  //       scaleRef.current.style.transition = 'transform 0.2s ease'
+  //     }
+
+  //     if (speechSynthesis) {
+  //       const utterance = new SpeechSynthesisUtterance(randomMessage)
+  //       utterance.rate = 0.7
+  //       utterance.pitch = 1.0
+  //       utterance.volume = 0.8
+        
+  //       utterance.onend = () => {
+  //         setIsSpeaking(false)
+  //         if (scaleRef.current) {
+  //           scaleRef.current.style.transform = 'scale(1)'
+  //           scaleRef.current.style.transition = 'transform 0.3s ease'
+  //         }
+  //       }
+        
+  //       speechSynthesis.speak(utterance)
+  //     }
+  //   }
+  // }
+
+
+  const handleStartSpeaking = async () => {
     if (isSpeaking) {
-      if (speechSynthesis) {
-        speechSynthesis.cancel()
-      }
-      setIsSpeaking(false)
-      playTone(330, 0.2, 0.05)
-    } else {
-      setIsSpeaking(true)
-      
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)]
-      setCurrentMessage(randomMessage)
-      
-      playTone(440, 0.1, 0.1)
-      setTimeout(() => playTone(550, 0.08, 0.08), 100)
-      setTimeout(() => playTone(660, 0.06, 0.06), 200)
-
-      if (rippleRef.current) {
-        rippleRef.current.style.animation = 'ripple 1s ease-out'
-        setTimeout(() => {
-          if (rippleRef.current) rippleRef.current.style.animation = ''
-        }, 1000)
-      }
-
-      if (scaleRef.current) {
-        scaleRef.current.style.transform = 'scale(0.95)'
-        scaleRef.current.style.transition = 'transform 0.2s ease'
-      }
-
-      if (speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(randomMessage)
-        utterance.rate = 0.7
-        utterance.pitch = 1.0
-        utterance.volume = 0.8
-        
-        utterance.onend = () => {
-          setIsSpeaking(false)
-          if (scaleRef.current) {
-            scaleRef.current.style.transform = 'scale(1)'
-            scaleRef.current.style.transition = 'transform 0.3s ease'
-          }
+      setIsSpeaking(false);
+      return;
+    }
+  
+    setIsSpeaking(true);
+    console.log('🟣 handleStartSpeaking clicked');
+  
+  
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    setCurrentMessage(randomMessage);
+  
+    try {
+      const response = await fetch('http://127.0.0.1:8001/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: randomMessage }),
+      });
+  
+      if (!response.ok) throw new Error('TTS failed');
+  
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+  
+      audio.play();
+  
+      audio.onended = () => {
+        setIsSpeaking(false);
+        if (scaleRef.current) {
+          scaleRef.current.style.transform = 'scale(1)';
+          scaleRef.current.style.transition = 'transform 0.3s ease';
         }
-        
-        speechSynthesis.speak(utterance)
-      }
+      };
+    } catch (err) {
+      console.error('ElevenLabs playback failed:', err);
+      setIsSpeaking(false);
+    }
+  
+    if (rippleRef.current) {
+      rippleRef.current.style.animation = 'ripple 1s ease-out';
+      setTimeout(() => {
+        if (rippleRef.current) rippleRef.current.style.animation = '';
+      }, 1000);
+    }
+  
+    if (scaleRef.current) {
+      scaleRef.current.style.transform = 'scale(0.95)';
+      scaleRef.current.style.transition = 'transform 0.2s ease';
     }
   }
+  
 
   const getStateColor = (value: number) => {
     if (value <= 30) return '#ef4444'
@@ -483,6 +542,9 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
                         `L ${(index / (happinessData.length - 1)) * 100} ${100 - (point.value / maxValue) * 100}`
                       ).join(' ')} L 100 100 L 0 100 Z`}
                       fill="url(#miniAreaGradient)"
+                      style={{
+                        transition: 'all 0.5s ease-in-out'
+                      }}
                     />
                     
                     <path
@@ -493,7 +555,8 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
                       strokeWidth="2.5"
                       fill="none"
                       style={{
-                        filter: `drop-shadow(0 0 6px ${currentColor}60)`
+                        filter: `drop-shadow(0 0 6px ${currentColor}60)`,
+                        transition: 'all 0.5s ease-in-out'
                       }}
                     />
                     
@@ -505,7 +568,8 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
                         r="2"
                         fill={getStateColor(point.value)}
                         style={{
-                          filter: `drop-shadow(0 0 4px ${getStateColor(point.value)})`
+                          filter: `drop-shadow(0 0 4px ${getStateColor(point.value)})`,
+                          transition: 'all 0.5s ease-in-out'
                         }}
                       />
                     ))}

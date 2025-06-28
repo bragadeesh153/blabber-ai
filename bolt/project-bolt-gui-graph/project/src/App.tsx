@@ -3,6 +3,7 @@ import VoiceInterface from './components/VoiceInterface'
 import Settings from './components/Settings'
 import TabNavigation from './components/TabNavigation'
 
+
 function App() {
   const [activeTab, setActiveTab] = useState<'voice' | 'settings'>('voice')
 

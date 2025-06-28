@@ -1,0 +1,20 @@
+.pulse-circle {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #7f5af0 0%, #2b2c3e 80%);
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 0 0 20px rgba(127, 90, 240, 0.5);
+    cursor: pointer;
+  }
+  
+  .pulse-circle.animate {
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
