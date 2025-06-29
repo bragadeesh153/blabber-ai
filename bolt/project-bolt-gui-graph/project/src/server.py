@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from elevenlabs import ElevenLabs, save
 from dotenv import load_dotenv
+from fastapi.testclient import TestClient
 # from pydub import AudioSegment
 
 import os
@@ -17,6 +18,7 @@ load_dotenv()
 happiness_data: List[Dict[str, Any]] = [60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0]
 current_happiness: int = 65
 last_update_time: int = int(time.time() * 1000)
+
 
 # Initialize with dummy data
 def initialize_dummy_data():
@@ -69,6 +71,7 @@ def initialize_dummy_data():
 initialize_dummy_data()
 
 app = FastAPI()
+api_client = TestClient(app)
 
 # Allow frontend to connect
 app.add_middleware(
@@ -113,6 +116,7 @@ async def update_happiness(request: Request):
         sentiment_score = body.get("sentiment_score", 0.5)  # 0-1 scale
         confidence = body.get("confidence", 0.8)  # 0-1 scale
         timestamp = body.get("timestamp", int(time.time() * 1000))
+        baby_status = body.get("description", "Monitoring...")
         
         # Convert sentiment score to happiness value (0-100)
         # sentiment_score: 0 = very negative, 1 = very positive
@@ -141,12 +145,30 @@ async def update_happiness(request: Request):
         happiness_data.append(new_data_point)
 
         print(f"🟣 New Happiness Index: {new_data_point['value']}")
+        print(f"🟣 Baby Status: {baby_status}")
         
         # Keep only the last 12 data points (sliding window)
         if len(happiness_data) > 12:
             happiness_data = happiness_data[-12:]
         
         #print(f"🟣 Updated happiness: {weighted_happiness} (sentiment: {sentiment_score}, confidence: {confidence})")
+
+        if sentiment_score < 0.2:
+            print(f"🟣 NOOO CRYYYYYYY: {baby_status}")
+
+        #code to call post api/tts for elevenlabs
+
+            text_to_speak = "The baby seems upset."
+
+            try:
+                response = api_client.post("/api/tts", json={"text": text_to_speak})
+
+                if response.status_code != 200:
+                    print(f"❌ TTS error: {response.status_code} - {response.text}")
+            except Exception as err:
+                print(f"❌ Error calling TTS: {err}")            
+    except Exception as e:
+        print(f"❌ Error calling TTS internally: {e}")          
         
         return {
             "status": "success",
@@ -165,28 +187,25 @@ async def tts(request: Request):
 
     print(f"🟣 Received text: {text}")
 
-    lullaby = """
-Hush, little baby... don't say a word...
-
-Mama's gonna buy you... a mockingbird...
-
-And if that mockingbird... don't sing...
-
-Mama's gonna buy you... a diamond ring...
-"""
+    lullaby = """Hush little Timmy..... 
+                Hush little Timmy.....
+                Hush little Timmy....
+                """
 
     if not text:
         return {"error": "Missing 'text'"}
 
 #v8DWAeuEGQSfwxqdH9t2
     audio = client.text_to_speech.convert(
-        voice_id="xgJU9KU8YgpWCGZnQ7SP",
+        #voice_id="xgJU9KU8YgpWCGZnQ7SP",
+        voice_id = "esH01SQ9lEwoWQCbfEg2",
         model_id="eleven_multilingual_v2",
         text=lullaby,
         output_format="mp3_44100_128", voice_settings={
         "stability": 0.2,
         "similarity_boost": 0.7,
         "style": 1.0, # adds warmth/emotion
+        "speed": 0.8,
         "use_speaker_boost": True
     }
     )

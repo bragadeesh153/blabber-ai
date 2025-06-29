@@ -59,7 +59,7 @@ class CryBabyService(ports.Service):
             
             # Print user-friendly crying status
             self._print_crying_status(prediction)
-
+            description = self._get_crying_status(prediction)
             prediction = 1.0 -self.get_crying_index(prediction)
 
             try:
@@ -67,7 +67,7 @@ class CryBabyService(ports.Service):
                     "sentiment_score": float(prediction),
                     "confidence": 1.0,
                     "timestamp": int(time.time() * 1000),
-                    "description": "Baby Monitoring..."
+                    "description": description
                 }
                 
                 response = requests.post(
@@ -100,6 +100,21 @@ class CryBabyService(ports.Service):
             self.logger.info(f"😊 Baby seems calm (Probability: {prediction:.1%})")
         else:
             self.logger.info(f"😴 Baby is very calm (Probability: {prediction:.1%})")
+
+    def _get_crying_status(self, prediction: float) -> str:
+        """
+        Print a user-friendly message about whether the baby is crying
+        """
+        if prediction > 0.8:
+            return f"😭 Baby's Crying"
+        elif prediction > 0.6:
+            return f"😢 Baby might be crying"
+        elif prediction > 0.4:
+            return f"🤔 Some crying sounds detected"
+        elif prediction > 0.2:
+            return f"😊 Baby seems calm"
+        else:
+            return f"😴 Baby is very calm"
 
     def get_crying_index(self, prediction: float):
         """
