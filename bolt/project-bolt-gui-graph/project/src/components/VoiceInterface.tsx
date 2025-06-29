@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react'
 interface VoiceInterfaceProps {}
 
 interface HappinessDataPoint {
+  id: string
   time: string
   value: number // 0-100: 0-30 = crying, 31-70 = calm/sleeping, 71-100 = happy
   timestamp: number
@@ -49,6 +50,22 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
 
   // Generate happiness data
   useEffect(() => {
+    const fetchHappinessData = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8001/api/happiness-data')
+        if (!response.ok) {
+          throw new Error('Failed to fetch happiness data')
+        }
+        const result = await response.json()
+        setHappinessData(result.data)
+        setCurrentHappiness(result.currentHappiness)
+      } catch (error) {
+        console.error('Error fetching happiness data:', error)
+        // Fallback to local data generation if server is not available
+        generateInitialData()
+      }
+    }
+
     const generateInitialData = () => {
       const points: HappinessDataPoint[] = []
       const now = Date.now()
@@ -77,39 +94,22 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
           value = 30 + Math.random() * 60
         }
         
-        points.push({ time, value: Math.round(value), timestamp })
+        points.push({ id: `${timestamp}`, time, value: Math.round(value), timestamp })
       }
       
       setHappinessData(points)
     }
 
-    generateInitialData()
+    // Initial fetch
+    fetchHappinessData()
 
+    // Set up interval to fetch new data every 4 seconds
     const interval = setInterval(() => {
-      const now = Date.now()
-      const time = new Date(now).toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      })
-      
-      let newValue = currentHappiness + (Math.random() - 0.5) * 40
-      newValue = Math.max(0, Math.min(100, newValue))
-      
-      setCurrentHappiness(newValue)
-      
-      setHappinessData(prev => {
-        // Add new data point to the end
-        const newDataPoint = { time, value: Math.round(newValue), timestamp: now }
-        const updatedData = [...prev, newDataPoint]
-        
-        // Keep only the last 12 data points (sliding window)
-        return updatedData.slice(-12)
-      })
+      fetchHappinessData()
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [currentHappiness])
+  }, [])
 
   // Web-based audio feedback
   const playTone = (frequency: number, duration: number, volume: number = 0.1) => {
@@ -562,7 +562,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
                     
                     {happinessData.map((point, index) => (
                       <circle
-                        key={index}
+                        key={point.id}
                         cx={(index / (happinessData.length - 1)) * 100}
                         cy={100 - (point.value / maxValue) * 100}
                         r="2"
