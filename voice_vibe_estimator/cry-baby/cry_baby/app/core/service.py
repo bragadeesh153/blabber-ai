@@ -58,7 +58,7 @@ class CryBabyService(ports.Service):
             self.repository.save(file_path, prediction)
             
             # Print user-friendly crying status
-            #self._print_crying_status(prediction)
+            self._print_crying_status(prediction)
 
             prediction = 1.0 -self.get_crying_index(prediction)
 

@@ -40,13 +40,13 @@ def test_audio_file(audio_file_path: pathlib.Path, classifier, logger: ColorfulC
         )
         logger.info(f"Audio file duration: {duration:.2f} seconds")
         
-        # If the audio file is longer than 2 seconds, we need to crop it into segments
-        segment_duration = 2.0
+        # If the audio file is longer than 4 seconds, we need to crop it into segments
+        segment_duration = 4.0
         num_segments = int(duration // segment_duration)
         
         if num_segments == 0:
-            logger.warning("Audio file is shorter than 2 seconds, will pad it")
-            # Pad the audio file to 2 seconds
+            logger.warning("Audio file is shorter than 4 seconds, will pad it")
+            # Pad the audio file to 4 seconds
             cropped_path = audio_client.pad(audio_file_path, segment_duration)
             prediction = classifier.classify(cropped_path)
             _log_prediction(prediction, 0, logger)
@@ -59,7 +59,7 @@ def test_audio_file(audio_file_path: pathlib.Path, classifier, logger: ColorfulC
             start_time = i * segment_duration
             end_time = start_time + segment_duration
             
-            # Crop the audio file to get a 2-second segment
+            # Crop the audio file to get a 4-second segment
             cropped_path = audio_client.crop(audio_file_path, start_time, end_time)
             
             try:
@@ -118,7 +118,7 @@ def main():
     mel_spectrogram_preprocessing_settings = MelSpectrogramPreprocessingSettings(
         sampling_rate_hz=16000,
         number_of_mel_bands=128,
-        duration_seconds=2,
+        duration_seconds=4,
         hop_length=512,
     )
 
