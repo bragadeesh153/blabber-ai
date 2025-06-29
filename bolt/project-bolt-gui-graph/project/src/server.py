@@ -14,7 +14,7 @@ from typing import List, Dict, Any
 load_dotenv()
 
 # Shared global variables for happiness data
-happiness_data: List[Dict[str, Any]] = []
+happiness_data: List[Dict[str, Any]] = [60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0, 60.0]
 current_happiness: int = 65
 last_update_time: int = int(time.time() * 1000)
 

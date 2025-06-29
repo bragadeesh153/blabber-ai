@@ -106,7 +106,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
     // Set up interval to fetch new data every 4 seconds
     const interval = setInterval(() => {
       fetchHappinessData()
-    }, 4000)
+    }, 2000)
 
     return () => clearInterval(interval)
   }, [])
