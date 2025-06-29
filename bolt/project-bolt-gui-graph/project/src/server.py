@@ -25,6 +25,7 @@ def initialize_dummy_data():
     data = []
     now = datetime.now()
     
+    '''
     for i in range(12):
         # Go back in time by i hours
         timestamp = now - timedelta(hours=i)
@@ -55,6 +56,7 @@ def initialize_dummy_data():
             "value": value,
             "timestamp": int(timestamp.timestamp() * 1000)
         })
+    '''
     
     # Reverse to show oldest first
     data.reverse()
@@ -89,6 +91,8 @@ async def health():
 async def get_happiness_data():
     """Return current happiness data from shared variables"""
     global happiness_data, current_happiness, last_update_time
+
+    #print(f"🟣 Happiness Index in GUI: {current_happiness}")
     
     return {
         "data": happiness_data,
@@ -135,12 +139,14 @@ async def update_happiness(request: Request):
         
         # Add new data point to the list
         happiness_data.append(new_data_point)
+
+        print(f"🟣 New Happiness Index: {new_data_point['value']}")
         
         # Keep only the last 12 data points (sliding window)
         if len(happiness_data) > 12:
             happiness_data = happiness_data[-12:]
         
-        print(f"🟣 Updated happiness: {weighted_happiness} (sentiment: {sentiment_score}, confidence: {confidence})")
+        #print(f"🟣 Updated happiness: {weighted_happiness} (sentiment: {sentiment_score}, confidence: {confidence})")
         
         return {
             "status": "success",

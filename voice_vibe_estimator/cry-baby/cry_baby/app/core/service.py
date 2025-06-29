@@ -1,3 +1,6 @@
+import requests
+import numpy as np
+import time
 import queue
 import threading
 from typing import Optional
@@ -55,7 +58,33 @@ class CryBabyService(ports.Service):
             self.repository.save(file_path, prediction)
             
             # Print user-friendly crying status
-            self._print_crying_status(prediction)
+            #self._print_crying_status(prediction)
+
+            prediction = 1.0 -self.get_crying_index(prediction)
+
+            try:
+                payload = {
+                    "sentiment_score": float(prediction),
+                    "confidence": 1.0,
+                    "timestamp": int(time.time() * 1000),
+                    "description": "Baby Monitoring..."
+                }
+                
+                response = requests.post(
+                    f"http://127.0.0.1:8001/api/update-happiness",
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    # print(f"✅ Sent happiness update:  (score: {sentiment_data['sentiment_score']:.2f}, confidence: {sentiment_data['confidence']:.2f})")
+                    print(f"   Server response: happiness={result.get('happiness', 'N/A')}, data_points={result.get('data_points', 'N/A')}")
+                else:
+                    print(f"❌ Failed to send happiness update: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"❌ Error sending happiness update: {e}")
 
     def _print_crying_status(self, prediction: float):
         """
@@ -71,6 +100,17 @@ class CryBabyService(ports.Service):
             self.logger.info(f"😊 Baby seems calm (Probability: {prediction:.1%})")
         else:
             self.logger.info(f"😴 Baby is very calm (Probability: {prediction:.1%})")
+
+    def get_crying_index(self, prediction: float):
+        """
+        Get the crying index based on the prediction
+        """
+        if prediction > 0.75:
+            return prediction
+        elif prediction < 0.35:
+            return (prediction + 0.40)
+        else:
+            return (prediction - 0.35)
 
     def stop_continuous_evaluation(self):
         self.recorder.tear_down()
